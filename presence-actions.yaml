@@ -21,7 +21,7 @@ blueprint:
       description: 'Define an action to be run when the person leaves home.'
       selector:
         action:
-        #  source_url: https://
+  source_url: https://github.com/dbeltman/hass-blueprints/blob/master/presence-actions.yaml
 trigger:
 - platform: state
   entity_id: !input 'person'
