@@ -30,7 +30,7 @@ blueprint:
         entity:
           domain: sensor
           device_class: temperature
-        #  source_url: https://gist.github.com/dbeltman/b90156effaaa0ea963642334934e541e
+        #  source_url: https://
 trigger:
   - platform: state
     entity_id: !input target_temp_entity
