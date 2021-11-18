@@ -1,0 +1,61 @@
+blueprint:
+  name: HVAC/CV Switcher
+  description: 'Heats the house/room with AC or CV depending on outside temperature. 
+  This will trigger when the state of the Target Temperature Entity is changed.
+  TODO?: add another trigger for when the outside temperature falls/rises above or below threshold'
+  domain: automation
+  input:
+    target_temp_entity:
+      name: Target Temp Entity
+      description: 'Input helper that will be monitored for desired temperature'
+      selector:
+        entity:
+          domain: input_number
+    hvac_entity:
+      name: HVAC Unit
+      description: 'The AC Unit for the house/room'
+      selector:
+        entity:
+          domain: climate
+    cv_entity:
+      name: CV Unit
+      description: 'The CV/Smart Valve for the house/room'
+      selector:
+        entity:
+          domain: climate
+    outside_temp_entity:
+      name: Outside Temperature sensor
+      description: "The sensor that will be monitored for the outside temperature. Default threshold is 8C"
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+        #  source_url: https://gist.github.com/dbeltman/b90156effaaa0ea963642334934e541e
+trigger:
+  - platform: state
+    entity_id: !input target_temp_entity
+condition: []
+variables:
+  target_temp_entity: !input target_temp_entity
+action:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: !input outside_temp_entity
+            above: '8'
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input hvac_entity
+            data:
+              temperature: "{{ trigger.to_state.state }}"
+      - conditions:
+          - condition: numeric_state
+            entity_id: !input outside_temp_entity
+            below: '8'
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input cv_entity
+            data:
+              temperature: "{{ trigger.to_state.state }}"
