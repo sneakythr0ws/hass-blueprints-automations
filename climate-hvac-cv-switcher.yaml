@@ -30,12 +30,12 @@ blueprint:
         entity:
           domain: climate
     weather_entity:
-      name: Weather sensor
+      name: Weather Sensor
       description: "The weather sensor that will be monitored for the outside temperature. Default threshold is 8C"
       selector:
         entity:
           domain: weather
-          
+
         #  source_url: https://
 trigger:
   #Trigger on target temp change
@@ -85,7 +85,7 @@ action:
             target:
               entity_id: !input hvac_entity
             data:
-              temperature: "{{ trigger.to_state.state }}"
+              temperature: "{{ states(target_temp_entity) }}"
           #Turn off CV, if not already off
           - choose:
               - conditions:
@@ -114,7 +114,7 @@ action:
             target:
               entity_id: !input cv_entity
             data:
-              temperature: "{{ trigger.to_state.state }}"    
+              temperature: "{{ states(target_temp_entity) }}"    
           #Turn off AC, if not already off
           - choose:
               - conditions:
