@@ -1,5 +1,6 @@
 blueprint:
   name: HVAC/CV Switcher
+  source_url: https://github.com/dbeltman/hass-blueprints/blob/master/climate-hvac-cv-switcher.yaml
   description: 'Heats the house/room with AC or CV depending on outside temperature. 
   This will trigger when the state of the Target Temperature Entity is changed.
   TODO?: add another trigger for when the outside temperature falls/rises above or below threshold'
@@ -35,8 +36,6 @@ blueprint:
       selector:
         entity:
           domain: weather
-
-        #  source_url: https://
 trigger:
   #Trigger on target temp change
   - platform: state
