@@ -29,43 +29,64 @@ blueprint:
       selector:
         entity:
           domain: climate
-    outside_temp_entity:
-      name: Outside Temperature sensor
-      description: "The sensor that will be monitored for the outside temperature. Default threshold is 8C"
+    weather_entity:
+      name: Weather sensor
+      description: "The weather sensor that will be monitored for the outside temperature. Default threshold is 8C"
       selector:
         entity:
-          domain: sensor
-          device_class: temperature
+          domain: weather
+          
         #  source_url: https://
 trigger:
+  #Trigger on target temp change
   - platform: state
     entity_id: !input target_temp_entity
+  #Trigger every 30 minutes to keep up to date with outside temperature
   - platform: time_pattern
     minutes: '30'    
-condition:
-  - condition: state
-    entity_id: !input heating_switch
-    state: 'on'
+  #Trigger when Heating switch has changed state for more than 3 seconds.
+  - platform: state
+    entity_id: input_boolean.heatingmode
     for:
       hours: 0
       minutes: 0
-      seconds: 0
-      milliseconds: 0 
-
+      seconds: 3
+      milliseconds: 0    
+condition: []
 variables:
   target_temp_entity: !input target_temp_entity
 action:
   - choose:
+      #Turn off heat when Heating switch is turned off
       - conditions:
+          - condition: state
+            entity_id: !input heating_switch
+            state: 'off'
+        sequence:
+          - service: climate.turn_off
+            target:
+              entity_id:
+                - !input hvac_entity
+                - !input cv_entity
+      #Turn on AC and turn off CV when Outside temperature is above threshold
+      - conditions:
+          #When weather entity attribute "temperature" > threshold
           - condition: numeric_state
-            entity_id: !input outside_temp_entity
+            entity_id: !input weather_entity
+            attribute: temperature
             above: '8'
         sequence:
+          #Turn on HVAC
+          - service: climate.turn_on
+            target:
+              entity_id: !input hvac_entity
+          #Set temp
           - service: climate.set_temperature
             target:
               entity_id: !input hvac_entity
             data:
               temperature: "{{ trigger.to_state.state }}"
+          #Turn off CV, if not already off
           - choose:
               - conditions:
                   - condition: state
@@ -76,16 +97,25 @@ action:
                     target:
                       entity_id: !input cv_entity
             default: []    
+      #Turn off AC and turn on CV when outside temperature is below threshold
       - conditions:
+            #When weather entity attribute "temperature" < threshold
           - condition: numeric_state
-            entity_id: !input outside_temp_entity
+            entity_id: !input weather_entity
+            attribute: temperature
             below: '8'
         sequence:
+          #Turn on CV
+          - service: climate.turn_on
+            target:
+              entity_id: !input cv_entity
+          #Set temp
           - service: climate.set_temperature
             target:
               entity_id: !input cv_entity
             data:
-              temperature: "{{ trigger.to_state.state }}"
+              temperature: "{{ trigger.to_state.state }}"    
+          #Turn off AC, if not already off
           - choose:
               - conditions:
                   - condition: state
