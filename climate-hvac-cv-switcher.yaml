@@ -11,6 +11,12 @@ blueprint:
       selector:
         entity:
           domain: input_number
+    heating_switch:
+      name: Heating Switch
+      description: 'Heating Switch for turning on/off the heating entirely'
+      selector:
+        entity:
+          domain: input_boolean
     hvac_entity:
       name: HVAC Unit
       description: 'The AC Unit for the house/room'
@@ -36,7 +42,16 @@ trigger:
     entity_id: !input target_temp_entity
   - platform: time_pattern
     minutes: '30'    
-condition: []
+condition:
+  - condition: state
+    entity_id: !input heating_switch
+    state: 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+      milliseconds: 0condition: 
+
 variables:
   target_temp_entity: !input target_temp_entity
 action:
