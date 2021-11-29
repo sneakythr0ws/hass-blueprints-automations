@@ -49,6 +49,16 @@ action:
               entity_id: !input hvac_entity
             data:
               temperature: "{{ trigger.to_state.state }}"
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input cv_entity
+                    state: heat
+                sequence:
+                  - service: climate.turn_off
+                    target:
+                      entity_id: !input cv_entity
+            default: []    
       - conditions:
           - condition: numeric_state
             entity_id: !input outside_temp_entity
@@ -59,3 +69,13 @@ action:
               entity_id: !input cv_entity
             data:
               temperature: "{{ trigger.to_state.state }}"
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input hvac_entity
+                    state: heat
+                sequence:
+                  - service: climate.turn_off
+                    target:
+                      entity_id: !input hvac_entity
+            default: []
