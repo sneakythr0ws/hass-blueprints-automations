@@ -50,7 +50,7 @@ condition:
       hours: 0
       minutes: 0
       seconds: 0
-      milliseconds: 0condition: 
+      milliseconds: 0 
 
 variables:
   target_temp_entity: !input target_temp_entity
