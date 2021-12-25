@@ -1,7 +1,6 @@
 blueprint:
-  name: Presence Actions
-  description: 'Run a set of actions when someone arrives. Run another set when they
-    leave.'
+  name: Full brightness
+  description: 'Set a light to full brightness, including a bright white colour'
   domain: script
   input:
     tgt_lights:
