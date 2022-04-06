@@ -1,0 +1,41 @@
+blueprint:
+  name: Presence Actions
+  description: 'Run a set of actions when someone arrives. Run another set when they
+    leave.'
+  domain: automation
+  input:
+    person:
+      name: Person
+      description: 'Select the person to be monitored.'
+      selector:
+        entity:
+          domain: person
+    arrival_action:
+      name: Arrival Action
+      description: 'Define an action to be run when the person arrives home.'
+      selector:
+        action:
+
+    leave_action:
+      name: Leave Action
+      description: 'Define an action to be run when the person leaves home.'
+      selector:
+        action:
+  source_url: https://github.com/dbeltman/hass-blueprints/blob/master/presence-actions.yaml
+trigger:
+- platform: state
+  entity_id: !input 'person'
+condition: []
+action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: !input 'person'
+        state: home
+      sequence: !input arrival_action
+    - conditions:
+      - condition: state
+        entity_id: !input 'person'
+        state: not_home
+      sequence: !input leave_action
+    default: []

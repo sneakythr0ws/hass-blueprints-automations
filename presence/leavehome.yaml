@@ -1,0 +1,84 @@
+blueprint:
+  name: Leave Home
+  description: 'Turn off Lights, Thermostats and other items when someone leaves'
+  domain: automation
+  input:
+    main_person:
+      name: Tracked Device
+      description: Tracked device for presence detection
+      selector:
+        entity:
+          domain: person
+    partner_person:
+      name: Tracked partner 
+      description: Will block automation from running
+      selector:
+        entity:
+          domain: person
+    lights:
+      name: Lights 
+      description: to be turned off
+      selector:
+        target:
+          entity:
+            domain: light
+    thermostats:
+      name: Thermostat(s) 
+      description: to be turned down to set degrees
+      selector:
+        target:
+          entity:
+            domain: climate
+    media_players:
+      name: Media player(s) 
+      description: to be turned off
+      selector:
+        target:
+          entity:
+            domain: media_player
+    fans:
+      name: Fan(s) 
+      description: to be turned ON
+      selector:
+        target:
+          entity:
+            domain: fan                    
+    setpoint:
+      name: Setpoint for thermostat(s)
+      selector:
+        number:
+          min: 10
+          max: 30  
+          unit_of_measurement: "%"
+
+    
+max_exceeded: silent
+trigger:
+  - platform: state
+    entity_id: !input main_person
+    id: mainleave
+    to: not_home
+    from: home
+condition:
+  - condition: not
+    conditions:
+      - condition: state
+        entity_id: !input partner_person
+        state: home
+action:
+  - service: light.turn_off
+    data: {}
+    target: !input lights
+  - data:
+      temperature: !input setpoint
+    service: climate.set_temperature
+    target: !input thermostats
+  - service: media_player.turn_off
+    target: !input media_players
+    #custom
+  - service: script.confirm_pc_off
+    data: {}
+  - service: fan.turn_on
+    data: {}
+    target: !input fans
+mode: single

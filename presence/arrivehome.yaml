@@ -1,0 +1,176 @@
+blueprint:
+  name: Arrive Home
+  description: 'Turn on Lights, Thermostats and other items when someone leaves'
+  domain: automation
+  input:
+    main_person:
+      name: Tracked Device
+      description: Tracked device for presence detection
+      selector:
+        entity:
+          domain: person
+    partner_person:
+      name: Tracked partner 
+      description: Will block automation from running
+      selector:
+        entity:
+          domain: person
+    outside_lights:
+      name: Outside Lights 
+      description: to be turned on if sun is down
+      selector:
+        target:
+          entity:
+            domain: light    
+    entrance_lights:
+      name: Entrance Lights
+      description: to be turned on when opening door
+      selector:
+        target:
+          entity:
+            domain: light
+    entrance_brightness:
+      name: Entrance Brightness
+      description: Brightness (Absolute %) of the Entrance Lights
+      selector:
+        number:
+          min: 0
+          max: 100 
+          unit_of_measurement: "%"
+    entrance_kelvin:
+      name: Entrance Kelvin
+      description: Color temperature of the Entrance Lights
+      selector:
+        number:
+          min: 2000
+          max: 6500
+          step: 100
+          unit_of_measurement: "K"          
+    thermostats:
+      name: Thermostat(s) 
+      description: to be turned up to set degrees
+      selector:
+        target:
+          entity:
+            domain: climate
+    door:
+      name: Door 
+      description: Wait for door to open before running entrance sequence
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: door                      
+    media_players:
+      name: Media player(s) 
+      description: to be turned on
+      selector:
+        target:
+          entity:
+            domain: media_player
+    switches:
+      name: Switch(es) 
+      description: to be turned on
+      selector:
+        target:
+          entity:
+            domain: switch                    
+    fans:
+      name: Fan(s) 
+      description: to be turned ON
+      selector:
+        target:
+          entity:
+            domain: fan                    
+    setpoint:
+      name: Setpoint for thermostat(s)
+      selector:
+        number:
+          min: 10
+          max: 30    
+    
+trigger:
+  - platform: state
+    entity_id: !input main_person
+    id: mainhome
+    to: home
+    from: not_home
+  - platform: state
+    entity_id: !input partner_person
+    id: partnerhome
+    to: home
+    from: not_home    
+condition: []
+action:
+# Set climate
+  - data:
+      temperature: !input setpoint
+    target: !input thermostats
+    service: climate.set_temperature
+# Turn on Outside lights, if sun is down    
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: below_horizon
+        sequence:
+          - data: {}
+            target: !input outside_lights
+            service: light.turn_on
+    default: []
+# Wait for door opening    
+  # If door opened in 1 hour, run entrance sequence
+  - wait_for_trigger:
+      - platform: state
+        entity_id: !input door
+        from: 'off'
+        to: 'on'
+    timeout: '01:00:00'
+    continue_on_timeout: false
+# Entrance Sequence
+  # Turn on lights to set brightness/temperature    
+  - service: light.turn_on
+    data:
+      kelvin: !input entrance_kelvin
+    target: !input entrance_lights
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 2
+      milliseconds: 0
+  - service: light.turn_on
+    data:
+      brightness_pct: !input entrance_brightness
+    target: !input entrance_lights  
+# Partner logic      
+  - choose:
+      - conditions:
+  # When partner not home      
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input partner_person
+                state: home
+  # Turn on switches                
+        sequence:
+          - service: switch.turn_on
+            data: {}
+            target: !input switches
+  # When partner home            
+      - conditions:
+          - condition: state
+            entity_id: !input partner_person
+            state: home
+  # Turn off fan            
+        sequence:
+          - service: fan.turn_off
+            data: {}
+            target: !input fans
+    default: []
+#custom
+  - service: counter.increment
+    data: {}
+    entity_id: counter.homecomings_today
+  - delay: '00:00:01'
+  - service: switch.turn_on
+    entity_id: switch.adaptive_lighting_living_room_flux
+mode: restart

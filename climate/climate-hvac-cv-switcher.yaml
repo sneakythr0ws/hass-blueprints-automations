@@ -1,0 +1,127 @@
+blueprint:
+  name: HVAC/CV Switcher
+  source_url: https://github.com/dbeltman/hass-blueprints/blob/master/climate-hvac-cv-switcher.yaml
+  description: 'Heats the house/room with AC or CV depending on outside temperature. 
+  This will trigger when the state of the Target Temperature Entity is changed.
+  TODO?: add another trigger for when the outside temperature falls/rises above or below threshold'
+  domain: automation
+  input:
+    target_temp_entity:
+      name: Target Temp Entity
+      description: 'Input helper that will be monitored for desired temperature'
+      selector:
+        entity:
+          domain: input_number
+    heating_switch:
+      name: Heating Switch
+      description: 'Heating Switch for turning on/off the heating entirely'
+      selector:
+        entity:
+          domain: input_boolean
+    hvac_entity:
+      name: HVAC Unit
+      description: 'The AC Unit for the house/room'
+      selector:
+        entity:
+          domain: climate
+    cv_entity:
+      name: CV Unit
+      description: 'The CV/Smart Valve for the house/room'
+      selector:
+        entity:
+          domain: climate
+    weather_entity:
+      name: Weather Sensor
+      description: "The weather sensor that will be monitored for the outside temperature. Default threshold is 8C"
+      selector:
+        entity:
+          domain: weather
+trigger:
+  #Trigger on target temp change
+  - platform: state
+    entity_id: !input target_temp_entity
+  #Trigger every 30 minutes to keep up to date with outside temperature
+  - platform: time_pattern
+    minutes: '30'    
+  #Trigger when Heating switch has changed state for more than 3 seconds.
+  - platform: state
+    entity_id: input_boolean.heatingmode
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0    
+condition: []
+variables:
+  target_temp_entity: !input target_temp_entity
+action:
+  - choose:
+      #Turn off heat when Heating switch is turned off
+      - conditions:
+          - condition: state
+            entity_id: !input heating_switch
+            state: 'off'
+        sequence:
+          - service: climate.turn_off
+            target:
+              entity_id:
+                - !input hvac_entity
+                - !input cv_entity
+      #Turn on AC and turn off CV when Outside temperature is above threshold
+      - conditions:
+          #When weather entity attribute "temperature" > threshold
+          - condition: numeric_state
+            entity_id: !input weather_entity
+            attribute: temperature
+            above: '8'
+        sequence:
+          #Turn on HVAC
+          - service: climate.turn_on
+            target:
+              entity_id: !input hvac_entity
+          #Set temp
+          - service: climate.set_temperature
+            target:
+              entity_id: !input hvac_entity
+            data:
+              temperature: "{{ states(target_temp_entity) }}"
+          #Turn off CV, if not already off
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input cv_entity
+                    state: heat
+                sequence:
+                  - service: climate.turn_off
+                    target:
+                      entity_id: !input cv_entity
+            default: []    
+      #Turn off AC and turn on CV when outside temperature is below threshold
+      - conditions:
+            #When weather entity attribute "temperature" < threshold
+          - condition: numeric_state
+            entity_id: !input weather_entity
+            attribute: temperature
+            below: '8'
+        sequence:
+          #Turn on CV
+          - service: climate.turn_on
+            target:
+              entity_id: !input cv_entity
+          #Set temp
+          - service: climate.set_temperature
+            target:
+              entity_id: !input cv_entity
+            data:
+              temperature: "{{ states(target_temp_entity) }}"    
+          #Turn off AC, if not already off
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input hvac_entity
+                    state: heat
+                sequence:
+                  - service: climate.turn_off
+                    target:
+                      entity_id: !input hvac_entity
+            default: []
