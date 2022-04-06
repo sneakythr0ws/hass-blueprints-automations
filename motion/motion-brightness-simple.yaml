@@ -1,0 +1,69 @@
+blueprint:
+  name: Motion Brightness - Simple
+  description: 'Turns up the Brightness to X after detecting motion, and turns down to Y after no longer detecting motion for Z minutes'
+  domain: automation
+  input: 
+    lights:
+      name: Lights
+      description: To be controlled when motion is detected
+      selector:
+        target:
+          entity:
+            domain: light
+    motion_detector:
+      name: Motion Device
+      description: Device that detects motion
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion              
+    brightness_high:
+      name: Brightness with motion
+      description: Brightness (Absolute %) when detection motion
+      selector:
+        number:
+          min: 0
+          max: 100 
+          unit_of_measurement: "%"
+    brightness_low:
+      name: Brightness without motion
+      description: Brightness (Absolute %) when no longer detecting motion
+      selector:
+        number:
+          min: 0
+          max: 100 
+          unit_of_measurement: "%"          
+    timeout:
+      name: Timeout
+      description: Brightness Timeout (in minutes) after motion is no longer detected
+      selector:
+        number:
+          min: 1
+          max: 60 
+          unit_of_measurement: "minutes"             
+                      
+trigger:
+  - platform: state
+    entity_id: !input motion_detector
+    from: 'off'
+    to: 'on' 
+condition: []
+action:
+  - service: light.turn_on
+    data:
+      brightness_pct: !input brightness_high
+    target: !input lights
+  - wait_for_trigger:
+      - platform: state
+        entity_id: !input motion_detector
+        from: 'on'
+        to: 'off'
+        for:
+          hours: 0
+          minutes: !input timeout
+          seconds: 0
+  - service: light.turn_on
+    data:
+      brightness_pct: !input brightness_low
+    target: !input lights
+mode: restart
