@@ -1,5 +1,5 @@
 blueprint:
-  name: Arrive Home
+  name: Presence - Arrive Home
   description: 'Turn on Lights, Thermostats and other items when someone leaves'
   domain: automation
   input:

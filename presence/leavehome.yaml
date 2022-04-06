@@ -1,5 +1,5 @@
 blueprint:
-  name: Leave Home
+  name: Presence - Leave Home
   description: 'Turn off Lights, Thermostats and other items when someone leaves'
   domain: automation
   input:
