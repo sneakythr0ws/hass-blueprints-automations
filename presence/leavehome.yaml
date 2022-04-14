@@ -47,9 +47,9 @@ blueprint:
       name: Setpoint for thermostat(s)
       selector:
         number:
-          min: 10
+          min: 16
           max: 30  
-          unit_of_measurement: "%"
+          unit_of_measurement: "°C"
     custom_actions:
       name: Custom actions to be run at the end of automation
       selector:
