@@ -143,8 +143,8 @@ action:
     target: !input entrance_lights  
 # Partner logic      
   - choose:
+  # When partner not home        
       - conditions:
-  # When partner not home      
           - condition: not
             conditions:
               - condition: state
