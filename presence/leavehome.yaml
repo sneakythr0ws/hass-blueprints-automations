@@ -50,8 +50,10 @@ blueprint:
           min: 10
           max: 30  
           unit_of_measurement: "%"
-
-    
+    custom_actions:
+      name: Custom actions to be run at the end of automation
+      selector:
+        action:
 max_exceeded: silent
 trigger:
   - platform: state
@@ -59,26 +61,56 @@ trigger:
     id: mainleave
     to: not_home
     from: home
-condition:
-  - condition: not
-    conditions:
-      - condition: state
-        entity_id: !input partner_person
-        state: home
+
+condition: []
 action:
-  - service: light.turn_off
-    data: {}
-    target: !input lights
-  - data:
-      temperature: !input setpoint
-    service: climate.set_temperature
-    target: !input thermostats
-  - service: media_player.turn_off
-    target: !input media_players
-    #custom
-  - service: script.confirm_pc_off
-    data: {}
-  - service: fan.turn_on
-    data: {}
-    target: !input fans
+  - choose:
+      - conditions:
+      # Partner still home, wait 15 mins for departure
+        - condition: state
+          entity_id: !input partner_person
+          state: home
+        sequence:
+          - wait_for_trigger:
+              - platform: state
+                entity_id: !input partner_person
+                to: not_home
+            timeout: '00:15:00'
+            continue_on_timeout: false
+          - service: light.turn_off
+            data: {}
+            target: !input lights
+          - data:
+              temperature: !input setpoint
+            service: climate.set_temperature
+            target: !input thermostats
+          - service: media_player.turn_off
+            target: !input media_players     
+          - service: fan.turn_on
+            data: {}
+            target: !input fans     
+          - choose:
+            default: !input custom_actions
+
+      - conditions:
+      # Already left home
+          - condition: state
+            entity_id: !input partner_person
+            state: not_home
+        sequence:
+          - service: light.turn_off
+            data: {}
+            target: !input lights
+          - data:
+              temperature: !input setpoint
+            service: climate.set_temperature
+            target: !input thermostats
+          - service: media_player.turn_off
+            target: !input media_players 
+          - service: fan.turn_on
+            data: {}
+            target: !input fans    
+          - choose:
+            default: !input custom_actions
+    default: []
 mode: single
