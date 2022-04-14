@@ -76,7 +76,7 @@ blueprint:
             domain: switch                    
     fans:
       name: Fan(s) 
-      description: to be turned ON
+      description: to be turned OFF
       selector:
         target:
           entity:
@@ -85,8 +85,13 @@ blueprint:
       name: Setpoint for thermostat(s)
       selector:
         number:
-          min: 10
-          max: 30    
+          min: 16
+          max: 30
+          unit_of_measurement: "°C"
+    custom_actions:
+      name: Custom actions to be run at the end of automation
+      selector:
+        action:            
     
 trigger:
   - platform: state
@@ -127,20 +132,28 @@ action:
     timeout: '01:00:00'
     continue_on_timeout: false
 # Entrance Sequence
-  # Turn on lights to set brightness/temperature    
-  - service: light.turn_on
-    data:
-      kelvin: !input entrance_kelvin
-    target: !input entrance_lights
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 2
-      milliseconds: 0
-  - service: light.turn_on
-    data:
-      brightness_pct: !input entrance_brightness
-    target: !input entrance_lights  
+  # Turn on lights to set brightness/temperature 
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: below_horizon
+        sequence:
+          - service: light.turn_on
+            data:
+              kelvin: !input entrance_kelvin
+            target: !input entrance_lights
+          - delay:
+              hours: 0
+              minutes: 0
+              seconds: 2
+              milliseconds: 0
+          - service: light.turn_on
+            data:
+              brightness_pct: !input entrance_brightness
+            target: !input entrance_lights  
+    default: []     
+
 # Partner logic      
   - choose:
   # When partner not home        
@@ -166,11 +179,7 @@ action:
             data: {}
             target: !input fans
     default: []
-#custom
-  - service: counter.increment
-    data: {}
-    entity_id: counter.homecomings_today
-  - delay: '00:00:01'
-  - service: switch.turn_on
-    entity_id: switch.adaptive_lighting_living_room_flux
+  # Custom Action    
+  - choose:
+    default: !input custom_actions    
 mode: restart
