@@ -132,7 +132,7 @@ action:
     timeout: '01:00:00'
     continue_on_timeout: false
 # Entrance Sequence
-  # Turn on lights to set brightness/temperature 
+  # Turn on lights to set brightness/temperature, if sun below horizon
   - choose:
       - conditions:
           - condition: state
@@ -153,7 +153,6 @@ action:
               brightness_pct: !input entrance_brightness
             target: !input entrance_lights  
     default: []     
-
 # Partner logic      
   - choose:
   # When partner not home        
