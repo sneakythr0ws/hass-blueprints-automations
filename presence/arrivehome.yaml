@@ -75,6 +75,7 @@ blueprint:
           entity:
             domain: switch                    
     fans:
+      default: {}
       name: Fan(s) 
       description: to be turned OFF
       selector:
@@ -83,16 +84,21 @@ blueprint:
             domain: fan                    
     setpoint:
       name: Setpoint for thermostat(s)
+      default: 16
       selector:
         number:
           min: 16
           max: 30
           unit_of_measurement: "°C"
     custom_actions:
+      default: {}
       name: Custom actions to be run at the end of automation
       selector:
         action:            
-    
+
+variables:
+  switches: !input switches
+  fans: !input fans
 trigger:
   - platform: state
     entity_id: !input main_person
@@ -164,9 +170,12 @@ action:
                 state: home
   # Turn on switches                
         sequence:
-          - service: switch.turn_on
-            data: {}
-            target: !input switches
+          - choose:
+              - conditions: "{{ switches }}"
+                sequence:
+                  - service: switch.turn_on
+                    data: {}
+                    target: !input switches
   # When partner home            
       - conditions:
           - condition: state
@@ -174,11 +183,14 @@ action:
             state: home
   # Turn off fan            
         sequence:
-          - service: fan.turn_off
-            data: {}
-            target: !input fans
+          - choose:
+              - conditions: "{{ fans }}"
+                sequence:    
+                  - service: fan.turn_off
+                    data: {}
+                    target: !input fans
     default: []
-  # Custom Action    
+# Custom Action    
   - choose:
     default: !input custom_actions    
 mode: restart
