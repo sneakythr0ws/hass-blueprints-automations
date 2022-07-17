@@ -1,41 +1,40 @@
 blueprint:
   name: Presence Actions
-  description: 'Run a set of actions when someone arrives. Run another set when they
-    leave.'
+  description: 'Run a set of actions when someone arrives. Run another set when they leave.'
   domain: automation
   input:
-    device_tracker:
-      name: Device
-      description: 'Select the device to be monitored.'
+    group:
+      name: Group
+      description: 'Select the group to be monitored.'
       selector:
         entity:
-          domain: device_tracker
+          domain: group
     arrival_action:
       name: Arrival Action
-      description: 'Define an action to be run when the device arrives home.'
+      description: 'Define an action to be run when the group arrives home.'
       selector:
         action:
 
     leave_action:
       name: Leave Action
-      description: 'Define an action to be run when the device leaves home.'
+      description: 'Define an action to be run when the group leaves home.'
       selector:
         action:
   source_url: https://github.com/dbeltman/hass-blueprints/blob/master/presence-actions.yaml
 trigger:
 - platform: state
-  entity_id: !input 'device_tracker'
+  entity_id: !input 'group'
 condition: []
 action:
   - choose:
     - conditions:
       - condition: state
-        entity_id: !input 'device_tracker'
+        entity_id: !input 'group'
         state: home
       sequence: !input arrival_action
     - conditions:
       - condition: state
-        entity_id: !input 'device_tracker'
+        entity_id: !input 'group'
         state: not_home
       sequence: !input leave_action
     default: []
